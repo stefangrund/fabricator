@@ -1,59 +1,28 @@
 const path = require('path');
-const webpack = require('webpack');
-
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 /**
- * Define plugins based on environment
+ * Define optimizations based on environment
  * @param {boolean} isDev If in development mode
- * @return {Array}
+ * @return {object}
  */
-function getPlugins(isDev) {
-
-  const plugins = [
-    new webpack.optimize.OccurenceOrderPlugin(),
-    new webpack.DefinePlugin({}),
-  ];
+const getOptimizations = (isDev) => {
+  let optimizations;
 
   if (isDev) {
-    plugins.push(new webpack.NoErrorsPlugin());
+    optimizations = {
+      noEmitOnErrors: true,
+    };
   } else {
-    plugins.push(new webpack.optimize.DedupePlugin());
-    plugins.push(new webpack.optimize.UglifyJsPlugin({
-      minimize: true,
-      sourceMap: false,
-      compress: {
-        warnings: false,
-      },
-    }));
+    optimizations = {
+      minimizer: [
+        new UglifyJsPlugin(),
+      ],
+    };
   }
 
-  return plugins;
-
-}
-
-
-/**
- * Define loaders
- * @return {Array}
- */
-function getLoaders() {
-
-  const loaders = [{
-    test: /(\.js)/,
-    exclude: /(node_modules)/,
-    loaders: ['babel'],
-  }, {
-    test: /(\.jpg|\.png)$/,
-    loader: 'url-loader?limit=10000',
-  }, {
-    test: /\.json/,
-    loader: 'json-loader',
-  }];
-
-  return loaders;
-
-}
-
+  return optimizations;
+};
 
 module.exports = (config) => {
   return {
@@ -67,11 +36,15 @@ module.exports = (config) => {
     },
     devtool: 'source-map',
     resolve: {
-      extensions: ['', '.js'],
+      extensions: ['.js'],
     },
-    plugins: getPlugins(config.dev),
+    optimization: getOptimizations(),
     module: {
-      loaders: getLoaders(),
+      rules: [
+        { test: /(\.js)/, use: 'babel-loader' },
+        { test: /(\.jpg|\.png)$/, use: 'url-loader?limit=10000' },
+        { test: /\.json/, use: 'json-loader' },
+      ],
     },
   };
 };
